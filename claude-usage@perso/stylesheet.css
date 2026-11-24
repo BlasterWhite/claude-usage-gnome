@@ -1,5 +1,41 @@
-.claude-usage-label { font-weight: bold; }
-.claude-usage-warn  { color: #f5c211; }
-.claude-usage-crit  { color: #ff7b63; }
-.claude-usage-dim   { color: #9a9996; }
-.claude-usage-mono  { font-family: monospace; }
+/* Panel */
+.claude-usage-panel { spacing: 6px; }
+.claude-usage-icon  { color: #d97757; font-weight: bold; }
+.claude-usage-label { font-weight: bold; font-feature-settings: "tnum"; }
+
+/* Levels */
+.claude-usage-warn { color: #f5c211; }
+.claude-usage-crit { color: #ff7b63; }
+.claude-usage-bg-ok   { background-color: -st-accent-color; }
+.claude-usage-bg-warn { background-color: #f5c211; }
+.claude-usage-bg-crit { background-color: #ff7b63; }
+
+/* Menu */
+.claude-usage-menu   { min-width: 320px; }
+.claude-usage-dim    { color: #9a9996; }
+.claude-usage-small  { font-size: 0.85em; }
+.claude-usage-num    { font-feature-settings: "tnum"; }
+.claude-usage-header { font-weight: bold; font-size: 0.9em; color: #9a9996; }
+.claude-usage-badge {
+    font-size: 0.8em;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 99px;
+    color: #e8a58c;
+    background-color: rgba(217, 119, 87, 0.2);
+}
+
+.claude-usage-limit   { spacing: 6px; }
+.claude-usage-percent { font-weight: bold; }
+.claude-usage-bar-track {
+    width: 280px;   /* keep in sync with BAR_WIDTH in extension.js */
+    height: 6px;
+    border-radius: 3px;
+    background-color: rgba(127, 127, 127, 0.25);
+}
+.claude-usage-bar-fill { height: 6px; border-radius: 3px; }
+
+.claude-usage-stats      { spacing: 12px; }
+.claude-usage-stat-value { font-weight: bold; font-size: 1.2em; font-feature-settings: "tnum"; }
+
+.claude-usage-icon-button { padding: 6px; border-radius: 99px; min-width: 0; min-height: 0; }

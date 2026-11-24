@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.claude-usage" path="/org/gnome/shell/extensions/claude-usage/">
+    <key name="panel-display" type="s">
+      <choices>
+        <choice value="session-weekly"/>
+        <choice value="session"/>
+        <choice value="weekly"/>
+        <choice value="tokens"/>
+      </choices>
+      <default>'session-weekly'</default>
+      <summary>What the panel label shows</summary>
+    </key>
+    <key name="panel-position" type="s">
+      <choices>
+        <choice value="left"/>
+        <choice value="center"/>
+        <choice value="right"/>
+      </choices>
+      <default>'left'</default>
+      <summary>Panel box the indicator is placed in</summary>
+    </key>
+    <key name="show-icon" type="b">
+      <default>true</default>
+      <summary>Show the ✻ icon in the panel</summary>
+    </key>
+    <key name="fetch-limits" type="b">
+      <default>true</default>
+      <summary>Fetch subscription limits from api.anthropic.com</summary>
+    </key>
+    <key name="show-local" type="b">
+      <default>true</default>
+      <summary>Show the Claude Code local stats section</summary>
+    </key>
+    <key name="refresh-interval" type="i">
+      <range min="30" max="3600"/>
+      <default>180</default>
+      <summary>Refresh interval in seconds</summary>
+    </key>
+    <key name="warn-threshold" type="i">
+      <range min="1" max="100"/>
+      <default>70</default>
+      <summary>Percentage at which usage turns yellow</summary>
+    </key>
+    <key name="crit-threshold" type="i">
+      <range min="1" max="100"/>
+      <default>90</default>
+      <summary>Percentage at which usage turns red</summary>
+    </key>
+  </schema>
+</schemalist>
