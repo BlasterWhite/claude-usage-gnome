@@ -4,7 +4,7 @@ A small top-bar indicator for GNOME Shell that shows how much of your **Claude s
 
 ![Panel indicator](docs/panel.png)
 
-By default the label `✻ 56% · 29%` reads as **current 5-hour session limit · weekly limit**. It turns yellow at 70% and red at 90%.
+By default the label reads `✻ 61% · 30%`: **current 5-hour session limit · weekly limit**. It can also show just one of them (as above), or today's Claude Code output tokens. It turns yellow at 70% and red at 90%.
 
 Click it to open the details:
 
