@@ -74,7 +74,7 @@ Logs: `journalctl -f -o cat /usr/bin/gnome-shell`
 Open them from the gear button in the menu, or with `gnome-extensions prefs claude-usage@perso`.
 
 <p align="center">
-  <img src="docs/prefs.png" alt="Settings window" width="549">
+  <img src="docs/prefs.png" alt="Settings window" width="531">
 </p>
 
 | Setting | Default | |
