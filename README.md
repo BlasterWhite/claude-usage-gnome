@@ -24,7 +24,9 @@ By default the label reads `✻ 62% · 30%`: **current 5-hour session limit · w
 - **Local Claude Code stats** (works offline): today's responses, output/input tokens and cache reads, output over the last 5 hours, and tokens per model.
 - **Color alerts**: the label and bars turn yellow, then red, at thresholds you choose.
 - **Settings window** to pick what the label shows, where it sits, and what is fetched.
-- Refreshes on a timer (3 minutes by default) and on demand from the refresh button.
+- Refreshes on a timer (3 minutes by default), whenever you open the menu, and from the refresh button.
+- **Light on resources**: the data script runs in a separate process (about 0.1 s per refresh), so the shell never stalls. Timed refreshes pause after 5 minutes without keyboard or mouse activity, and GNOME turns the extension off while the screen is locked.
+- Times follow your GNOME 12h/24h clock setting.
 - When the limits can't be fetched, the label shows today's output tokens instead.
 
 ## How it works

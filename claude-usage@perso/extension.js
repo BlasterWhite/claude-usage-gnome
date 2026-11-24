@@ -14,6 +14,8 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 export const SCHEMA = 'org.gnome.shell.extensions.claude-usage';
 const VERTICAL = Clutter.Orientation.VERTICAL;
+const IDLE_PAUSE_MS = 5 * 60 * 1000;   // no timed refresh after 5 min without input
+const OPEN_REFRESH_MIN_AGE_S = 15;      // opening the menu refreshes data older than this
 
 const LIMIT_WINDOWS = [
     ['five_hour', 'Current session (5 h)'],
@@ -29,7 +31,13 @@ function fmtTokens(n) {
     return `${n}`;
 }
 
-function fmtReset(iso) {
+// Follows GNOME's own 12h/24h clock setting (Settings → Date & Time).
+function timeFormat(clockSettings, withDay = false) {
+    const t = clockSettings.get_string('clock-format') === '12h' ? '%-l:%M %p' : '%H:%M';
+    return withDay ? `%a ${t}` : t;
+}
+
+function fmtReset(iso, clockSettings) {
     const ms = Date.parse(iso) - Date.now();
     if (Number.isNaN(ms)) return '';
     if (ms <= 0) return 'Resets now';
@@ -40,7 +48,7 @@ function fmtReset(iso) {
     else if (h > 0) rel = `${h}h ${String(m).padStart(2, '0')}m`;
     else rel = `${m} min`;
     const at = GLib.DateTime.new_from_unix_local(Math.floor(Date.parse(iso) / 1000));
-    const when = at.format(d > 0 ? '%a %H:%M' : '%H:%M');
+    const when = at.format(timeFormat(clockSettings, d > 0));
     return `Resets in ${rel} · ${when}`;
 }
 
@@ -84,6 +92,15 @@ class ClaudeIndicator extends PanelMenu.Button {
         this._cancellable = new Gio.Cancellable();
         this._data = null;
         this._error = null;
+        this._lastRefresh = 0;
+
+        this._clock = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
+        this._clockId = this._clock.connect('changed::clock-format', () => this.render());
+
+        this.menu.connect('open-state-changed', (_menu, open) => {
+            const ageS = (GLib.get_monotonic_time() - this._lastRefresh) / 1e6;
+            if (open && ageS > OPEN_REFRESH_MIN_AGE_S) this.refresh();
+        });
 
         const box = new St.BoxLayout({style_class: 'claude-usage-panel'});
         this._icon = new St.Label({
@@ -145,6 +162,7 @@ class ClaudeIndicator extends PanelMenu.Button {
             return;
         }
         this._busy = true;
+        this._lastRefresh = GLib.get_monotonic_time();
         proc.communicate_utf8_async(null, this._cancellable, (p, res) => {
             this._busy = false;
             try {
@@ -216,7 +234,7 @@ class ClaudeIndicator extends PanelMenu.Button {
         box.add_child(top);
         box.add_child(this._bar(w.percent, level));
         if (w.resets_at)
-            box.add_child(new St.Label({text: fmtReset(w.resets_at), style_class: 'claude-usage-dim claude-usage-small'}));
+            box.add_child(new St.Label({text: fmtReset(w.resets_at, this._clock), style_class: 'claude-usage-dim claude-usage-small'}));
         this._item().add_child(box);
     }
 
@@ -312,13 +330,13 @@ class ClaudeIndicator extends PanelMenu.Button {
         }
 
         const at = GLib.DateTime.new_from_unix_local(Math.floor(Date.parse(data.generated_at) / 1000));
-        this._updated.text = this._error
-            ? `Update failed · last data ${at.format('%H:%M')}`
-            : `Updated at ${at.format('%H:%M')}`;
+        const time = at.format(timeFormat(this._clock));
+        this._updated.text = this._error ? `Update failed · last data ${time}` : `Updated at ${time}`;
     }
 
     destroy() {
         this._cancellable.cancel();
+        this._clock.disconnect(this._clockId);
         super.destroy();
     }
 });
@@ -326,6 +344,7 @@ class ClaudeIndicator extends PanelMenu.Button {
 export default class ClaudeUsageExtension extends Extension {
     enable() {
         this._settings = this.getSettings(SCHEMA);
+        this._idleMonitor = global.backend.get_core_idle_monitor();
         this._addIndicator();
         this._startTimer();
         this._settingsId = this._settings.connect('changed', (_s, key) => {
@@ -357,9 +376,21 @@ export default class ClaudeUsageExtension extends Extension {
         if (this._timer) GLib.source_remove(this._timer);
         this._timer = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT,
             this._settings.get_int('refresh-interval'), () => {
-                this._indicator?.refresh();
+                if (this._idleMonitor.get_idletime() > IDLE_PAUSE_MS)
+                    this._waitForActivity();
+                else
+                    this._indicator?.refresh();
                 return GLib.SOURCE_CONTINUE;
             });
+    }
+
+    // Away from the keyboard: skip timed refreshes, catch up as soon as the user is back.
+    _waitForActivity() {
+        if (this._activeWatch) return;
+        this._activeWatch = this._idleMonitor.add_user_active_watch(() => {
+            this._activeWatch = 0;
+            this._indicator?.refresh();
+        });
     }
 
     disable() {
@@ -367,6 +398,11 @@ export default class ClaudeUsageExtension extends Extension {
             GLib.source_remove(this._timer);
             this._timer = null;
         }
+        if (this._activeWatch) {
+            this._idleMonitor.remove_watch(this._activeWatch);
+            this._activeWatch = 0;
+        }
+        this._idleMonitor = null;
         if (this._settingsId) {
             this._settings.disconnect(this._settingsId);
             this._settingsId = null;
