@@ -48,7 +48,7 @@ Data sources:
 
 ## Requirements
 
-- GNOME Shell 48, 49 or 50
+- GNOME Shell 48, 49, 50 or 51
 - `python3` (standard library only)
 - [Claude Code](https://claude.com/claude-code) logged in with a Claude subscription (needed for the limits; the local stats only need the logs)
 
