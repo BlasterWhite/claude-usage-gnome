@@ -6,12 +6,15 @@ Optional (--limits): subscription limits through the undocumented endpoint
 used by Claude Code's /usage, authenticated with the local OAuth token.
 The token is only sent to api.anthropic.com.
 """
-import json, sys, time, urllib.request
+import json, os, sys, time, urllib.error, urllib.request
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 CLAUDE_DIR = Path.home() / ".claude"
+LIMITS_CACHE = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "claude-usage-gnome" / "limits.json"
+MIN_FETCH_INTERVAL = 120     # seconds between two API calls, whatever the refresh rate
+MIN_BACKOFF, MAX_BACKOFF = 300, 1800  # after a 429: 5 min, doubling up to 30 min
 
 
 def parse_ts(s):
@@ -76,16 +79,30 @@ def local_usage():
     }
 
 
-def subscription_limits():
-    creds = json.loads((CLAUDE_DIR / ".credentials.json").read_text())["claudeAiOauth"]
-    if creds.get("expiresAt", 0) / 1000 < time.time():
-        return {"error": "OAuth token expired (run Claude Code to refresh it)"}
+def _load_cache():
+    try:
+        return json.loads(LIMITS_CACHE.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_cache(cache):
+    try:
+        LIMITS_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = LIMITS_CACHE.with_suffix(".tmp")
+        tmp.write_text(json.dumps(cache))
+        tmp.replace(LIMITS_CACHE)
+    except OSError:
+        pass
+
+
+def _fetch_limits(creds):
     req = urllib.request.Request(
         "https://api.anthropic.com/api/oauth/usage",
         headers={
             "Authorization": f"Bearer {creds['accessToken']}",
             "anthropic-beta": "oauth-2025-04-20",
-            "User-Agent": "claude-usage-gnome/0.1",
+            "User-Agent": "claude-usage-gnome/0.2",
         },
     )
     with urllib.request.urlopen(req, timeout=10) as r:
@@ -101,6 +118,52 @@ def subscription_limits():
         {"name": r.get("display_name"), "percent_of_limit": r.get("percent_of_limit")} for r in rows
     ]
     return keep
+
+
+def subscription_limits():
+    """Return limits, hitting the API at most every MIN_FETCH_INTERVAL seconds.
+
+    The last good answer is cached on disk. When a fetch is skipped or fails,
+    that cached answer is returned with "stale_reason" (and "retry_at" when
+    rate limited) so the extension can keep showing it.
+    """
+    now = time.time()
+    cache = _load_cache()
+    cached = cache.get("data")
+
+    def stale(reason, retry_at=None):
+        if not cached:
+            return {"error": reason, "retry_at": retry_at}
+        return dict(cached, fetched_at=cache.get("fetched_at"), stale_reason=reason, retry_at=retry_at)
+
+    if cached and now - cache.get("fetched_at", 0) < MIN_FETCH_INTERVAL:
+        return dict(cached, fetched_at=cache["fetched_at"])
+    if cache.get("retry_at", 0) > now:
+        return stale("rate limited", cache["retry_at"])
+
+    creds = json.loads((CLAUDE_DIR / ".credentials.json").read_text())["claudeAiOauth"]
+    if creds.get("expiresAt", 0) / 1000 < now:
+        return stale("OAuth token expired, run Claude Code to refresh it")
+
+    try:
+        data = _fetch_limits(creds)
+    except urllib.error.HTTPError as e:
+        if e.code != 429:
+            return stale(f"HTTP {e.code}")
+        strikes = cache.get("strikes", 0) + 1
+        try:
+            wait = int(e.headers.get("retry-after", ""))
+        except ValueError:
+            wait = 0
+        wait = max(wait, min(MAX_BACKOFF, MIN_BACKOFF * 2 ** (strikes - 1)))
+        cache.update(retry_at=now + wait, strikes=strikes)
+        _save_cache(cache)
+        return stale("rate limited", cache["retry_at"])
+    except (urllib.error.URLError, OSError, ValueError) as e:
+        return stale(f"network error ({type(e).__name__})")
+
+    _save_cache({"data": data, "fetched_at": now})
+    return dict(data, fetched_at=now)
 
 
 def main():

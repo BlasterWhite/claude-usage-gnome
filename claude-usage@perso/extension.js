@@ -293,9 +293,15 @@ class ClaudeIndicator extends PanelMenu.Button {
         // Subscription limits
         if (limits) {
             this._addHeader('Subscription limits', limits.plan ? capitalize(limits.plan) : null);
+            const fmtAt = sec => GLib.DateTime.new_from_unix_local(Math.floor(sec)).format(timeFormat(this._clock));
+            const retry = limits.retry_at ? ` · retrying at ${fmtAt(limits.retry_at)}` : '';
             if (limits.error) {
-                this._addText(limits.error, 'claude-usage-dim');
+                this._addText(`Unavailable: ${limits.error}${retry}`, 'claude-usage-dim claude-usage-small');
             } else {
+                if (limits.stale_reason) {
+                    this._addText(`Not updated (${limits.stale_reason})${retry} · showing data from ${fmtAt(limits.fetched_at)}`,
+                        'claude-usage-warn claude-usage-small');
+                }
                 for (const [key, name] of LIMIT_WINDOWS) {
                     const w = limits[key];
                     if (w) this._addLimit(name, w, levelOf(w.percent));
