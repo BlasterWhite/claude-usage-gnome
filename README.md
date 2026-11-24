@@ -2,13 +2,21 @@
 
 A small top-bar indicator for GNOME Shell that shows how much of your **Claude subscription limits** you have used, plus your **Claude Code token usage** for the day, read from local logs.
 
-![Panel indicator](docs/panel.png)
+<p align="center">
+  <img src="docs/menu.png" alt="Top-bar indicator and its dropdown menu" width="362">
+</p>
 
-By default the label reads `✻ 61% · 30%`: **current 5-hour session limit · weekly limit**. It can also show just one of them (as above), or today's Claude Code output tokens. It turns yellow at 70% and red at 90%.
+By default the label reads `✻ 61% · 30%`: **current 5-hour session limit · weekly limit**. It can also show just one of them (as above), or today's Claude Code output tokens. It turns yellow at 70% and red at 90%. Click it to open the details.
 
-Click it to open the details:
+## Contents
 
-![Dropdown menu](docs/menu.png)
+- [Features](#features)
+- [How it works](#how-it-works)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Settings](#settings)
+- [Known limitations](#known-limitations)
+- [License](#license)
 
 ## Features
 
@@ -65,7 +73,9 @@ Logs: `journalctl -f -o cat /usr/bin/gnome-shell`
 
 Open them from the gear button in the menu, or with `gnome-extensions prefs claude-usage@perso`.
 
-![Settings window](docs/prefs.png)
+<p align="center">
+  <img src="docs/prefs.png" alt="Settings window" width="549">
+</p>
 
 | Setting | Default | |
 |---|---|---|
