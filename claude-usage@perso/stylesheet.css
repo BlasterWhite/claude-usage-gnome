@@ -28,13 +28,13 @@
 .claude-usage-limit   { spacing: 6px; }
 .claude-usage-percent { font-weight: bold; }
 .claude-usage-bar-track {
-    width: 280px;   /* keep in sync with BAR_WIDTH in extension.js */
     height: 6px;
     border-radius: 3px;
     background-color: rgba(127, 127, 127, 0.25);
 }
 .claude-usage-bar-fill { height: 6px; border-radius: 3px; }
 
+.claude-usage-kv         { spacing: 12px; }
 .claude-usage-stats      { spacing: 12px; }
 .claude-usage-stat-value { font-weight: bold; font-size: 1.2em; font-feature-settings: "tnum"; }
 

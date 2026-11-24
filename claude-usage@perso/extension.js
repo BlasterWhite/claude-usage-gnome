@@ -13,7 +13,6 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 export const SCHEMA = 'org.gnome.shell.extensions.claude-usage';
-const BAR_WIDTH = 280; // px, must match .claude-usage-bar-track in stylesheet.css
 const VERTICAL = Clutter.Orientation.VERTICAL;
 
 const LIMIT_WINDOWS = [
@@ -48,6 +47,32 @@ function fmtReset(iso) {
 function capitalize(s) {
     return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
+
+// Lays out its single child from the left edge over `fraction` of the width.
+const FractionLayout = GObject.registerClass(
+class FractionLayout extends Clutter.LayoutManager {
+    _init(fraction) {
+        super._init();
+        this._fraction = fraction;
+    }
+
+    vfunc_get_preferred_width(_container, _forHeight) {
+        return [0, 0];
+    }
+
+    vfunc_get_preferred_height(container, forWidth) {
+        return container.get_first_child()?.get_preferred_height(forWidth) ?? [0, 0];
+    }
+
+    vfunc_allocate(container, box) {
+        const child = container.get_first_child();
+        if (!child) return;
+        const b = box.copy();
+        const w = (box.x2 - box.x1) * this._fraction;
+        b.x2 = b.x1 + Math.max(w, box.y2 - box.y1);
+        child.allocate(b);
+    }
+});
 
 const ClaudeIndicator = GObject.registerClass(
 class ClaudeIndicator extends PanelMenu.Button {
@@ -165,6 +190,7 @@ class ClaudeIndicator extends PanelMenu.Button {
 
     _addKeyValue(key, value, styleClass = '') {
         const it = this._item();
+        it.add_style_class_name('claude-usage-kv');
         it.add_child(new St.Label({text: key, x_expand: true, style_class: styleClass}));
         it.add_child(new St.Label({text: value, style_class: `claude-usage-num ${styleClass}`}));
     }
@@ -172,15 +198,11 @@ class ClaudeIndicator extends PanelMenu.Button {
     _bar(percent, level) {
         const frac = Math.min(1, Math.max(0, percent / 100));
         const track = new St.Widget({
-            style_class: 'claude-usage-bar-track', layout_manager: new Clutter.BinLayout(),
+            style_class: 'claude-usage-bar-track', x_expand: true,
+            layout_manager: new FractionLayout(frac),
         });
-        if (frac > 0) {
-            track.add_child(new St.Widget({
-                style_class: `claude-usage-bar-fill claude-usage-bg-${level}`,
-                style: `width: ${Math.max(6, Math.round(BAR_WIDTH * frac))}px;`,
-                x_align: Clutter.ActorAlign.START,
-            }));
-        }
+        if (frac > 0)
+            track.add_child(new St.Widget({style_class: `claude-usage-bar-fill claude-usage-bg-${level}`}));
         return track;
     }
 
@@ -283,7 +305,7 @@ class ClaudeIndicator extends PanelMenu.Button {
                     [fmtTokens((t.input ?? 0) + (t.cache_write ?? 0)), 'input'],
                     [fmtTokens(t.cache_read), 'cache read'],
                 ]);
-                this._addKeyValue('Output, last 5 hours', fmtTokens(local.last_5h?.output));
+                this._addKeyValue('Output, last 5 hours', fmtTokens(local.last_5h?.output), 'claude-usage-small');
                 for (const [model, n] of Object.entries(local.models_today ?? {}))
                     this._addKeyValue(model, fmtTokens(n), 'claude-usage-dim claude-usage-small');
             }
