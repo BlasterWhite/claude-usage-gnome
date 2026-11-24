@@ -24,12 +24,12 @@ function fmtTokens(n) {
 function fmtReset(iso) {
     if (!iso) return '';
     const ms = Date.parse(iso) - Date.now();
-    if (ms <= 0) return 'maintenant';
+    if (ms <= 0) return 'now';
     const min = Math.round(ms / 60000);
     const d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
-    if (d > 0) return `dans ${d}j ${h}h`;
-    if (h > 0) return `dans ${h}h${String(m).padStart(2, '0')}`;
-    return `dans ${m} min`;
+    if (d > 0) return `in ${d}d ${h}h`;
+    if (h > 0) return `in ${h}h${String(m).padStart(2, '0')}`;
+    return `in ${m} min`;
 }
 
 function bar(percent, width = 20) {
@@ -54,11 +54,11 @@ class ClaudeIndicator extends PanelMenu.Button {
         this._section = new PopupMenu.PopupMenuSection();
         this.menu.addMenuItem(this._section);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        const refresh = new PopupMenu.PopupMenuItem('Rafraîchir');
+        const refresh = new PopupMenu.PopupMenuItem('Refresh');
         refresh.connect('activate', () => this.refresh());
         this.menu.addMenuItem(refresh);
 
-        this._addInfo('Chargement…');
+        this._addInfo('Loading…');
     }
 
     _addInfo(text, styleClass = null) {
@@ -99,7 +99,7 @@ class ClaudeIndicator extends PanelMenu.Button {
     _showError(msg) {
         this._label.text = '✻ !';
         this._section.removeAll();
-        this._addInfo(`Erreur : ${msg}`.slice(0, 200), 'claude-usage-crit');
+        this._addInfo(`Error: ${msg}`.slice(0, 200), 'claude-usage-crit');
     }
 
     _render(data) {
@@ -126,47 +126,47 @@ class ClaudeIndicator extends PanelMenu.Button {
         // Subscription section
         if (limits) {
             if (limits.error) {
-                this._addHeader('Limites d\'abonnement');
+                this._addHeader('Subscription limits');
                 this._addInfo(limits.error, 'claude-usage-dim');
             } else {
-                this._addHeader(`Limites d'abonnement${limits.plan ? ` (${limits.plan})` : ''}`);
+                this._addHeader(`Subscription limits${limits.plan ? ` (${limits.plan})` : ''}`);
                 const windows = [
                     ['five_hour', 'Session (5 h)'],
-                    ['seven_day', 'Semaine'],
-                    ['seven_day_opus', 'Semaine · Opus'],
-                    ['seven_day_sonnet', 'Semaine · Sonnet'],
+                    ['seven_day', 'Week'],
+                    ['seven_day_opus', 'Week · Opus'],
+                    ['seven_day_sonnet', 'Week · Sonnet'],
                 ];
                 for (const [key, name] of windows) {
                     const w = limits[key];
                     if (!w) continue;
                     this._addInfo(`${name.padEnd(16)} ${bar(w.percent)} ${Math.round(w.percent)}%`, 'claude-usage-mono');
-                    this._addInfo(`    reset ${fmtReset(w.resets_at)}`, 'claude-usage-dim');
+                    this._addInfo(`    resets ${fmtReset(w.resets_at)}`, 'claude-usage-dim');
                 }
                 const rows = (limits.weekly_breakdown ?? []).filter(r => r.percent_of_limit > 0);
                 if (rows.length)
-                    this._addInfo('Semaine : ' + rows.map(r => `${r.name} ${r.percent_of_limit}%`).join(' · '),
+                    this._addInfo('This week: ' + rows.map(r => `${r.name} ${r.percent_of_limit}%`).join(' · '),
                         'claude-usage-dim');
             }
             this._section.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         }
 
         // Local Claude Code section
-        this._addHeader('Claude Code (logs locaux)');
+        this._addHeader('Claude Code (local logs)');
         if (local.error) {
             this._addInfo(local.error, 'claude-usage-crit');
         } else {
             const t = local.today ?? {};
-            this._addInfo(`Aujourd'hui : ${t.messages ?? 0} réponses · ` +
-                `${fmtTokens(t.output)} sortie · ${fmtTokens((t.input ?? 0) + (t.cache_write ?? 0))} entrée`);
-            this._addInfo(`    cache lu : ${fmtTokens(t.cache_read)}`, 'claude-usage-dim');
+            this._addInfo(`Today: ${t.messages ?? 0} responses · ` +
+                `${fmtTokens(t.output)} output · ${fmtTokens((t.input ?? 0) + (t.cache_write ?? 0))} input`);
+            this._addInfo(`    cache read: ${fmtTokens(t.cache_read)}`, 'claude-usage-dim');
             const h = local.last_5h ?? {};
-            this._addInfo(`5 dernières h : ${fmtTokens(h.output)} sortie`);
+            this._addInfo(`Last 5 h: ${fmtTokens(h.output)} output`);
             for (const [model, n] of Object.entries(local.models_today ?? {}))
-                this._addInfo(`    ${model} : ${fmtTokens(n)}`, 'claude-usage-dim');
+                this._addInfo(`    ${model}: ${fmtTokens(n)}`, 'claude-usage-dim');
         }
 
         const at = new Date(data.generated_at);
-        this._addInfo(`Mis à jour à ${at.toLocaleTimeString()}`, 'claude-usage-dim');
+        this._addInfo(`Updated at ${at.toLocaleTimeString()}`, 'claude-usage-dim');
     }
 
     destroy() {

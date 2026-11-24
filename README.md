@@ -10,8 +10,6 @@ Click it to open the details:
 
 ![Dropdown menu](docs/menu.png)
 
-> The UI is currently in French; the screenshot shows "Session (5 h)", "Semaine" (week), "reset dans…" (resets in…), etc.
-
 ## Features
 
 - **Subscription limits**: usage percentage and reset time for the 5-hour session window, the weekly window, and the per-model weekly windows (Opus / Sonnet) when your plan has them. It also shows the weekly breakdown by product (Claude Code, Cowork, …).
@@ -72,7 +70,6 @@ There is no preferences window yet. Edit the constants at the top of `extension.
 
 - If the OAuth token has expired, the menu says so. Run Claude Code once so it refreshes the token.
 - The limits endpoint is unofficial and may stop working at any time.
-- The UI is in French only for now.
 
 ## License
 

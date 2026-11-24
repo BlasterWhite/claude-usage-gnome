@@ -79,7 +79,7 @@ def local_usage():
 def subscription_limits():
     creds = json.loads((CLAUDE_DIR / ".credentials.json").read_text())["claudeAiOauth"]
     if creds.get("expiresAt", 0) / 1000 < time.time():
-        return {"error": "token OAuth expiré (relance Claude Code pour le rafraîchir)"}
+        return {"error": "OAuth token expired (run Claude Code to refresh it)"}
     req = urllib.request.Request(
         "https://api.anthropic.com/api/oauth/usage",
         headers={
