@@ -4,9 +4,13 @@ A small top-bar indicator for GNOME Shell that shows how much of your **Claude s
 
 <p align="center">
   <img src="docs/menu.png" alt="Top-bar indicator and its dropdown menu" width="362">
+  &nbsp;
+  <img src="docs/menu-warning.png" alt="The same menu with the session limit at 81%, shown in yellow" width="362">
 </p>
 
-By default the label reads `✻ 62% · 30%`: **current 5-hour session limit · weekly limit**. It can also show just one of them (as above), or today's Claude Code output tokens. It turns yellow at 70% and red at 90%. Click it to open the details.
+By default the label reads `✻ 62% · 30%`: **current 5-hour session limit · weekly limit**. It can also show just one of them (as in these screenshots), or today's Claude Code output tokens. Click it to open the details.
+
+Usage turns **yellow at 70%** (right) and **red at 90%**, both in the top bar and on the bars. The thresholds are adjustable.
 
 ## Contents
 
