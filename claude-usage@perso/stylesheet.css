@@ -1,0 +1,5 @@
+.claude-usage-label { font-weight: bold; }
+.claude-usage-warn  { color: #f5c211; }
+.claude-usage-crit  { color: #ff7b63; }
+.claude-usage-dim   { color: #9a9996; }
+.claude-usage-mono  { font-family: monospace; }

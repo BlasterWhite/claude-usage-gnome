@@ -1,0 +1,7 @@
+{
+  "uuid": "claude-usage@perso",
+  "name": "Claude Usage",
+  "description": "Affiche l'utilisation de Claude (limites d'abonnement + tokens Claude Code) dans la barre du haut.",
+  "shell-version": ["48", "49", "50"],
+  "version": 1
+}
